@@ -1,0 +1,10 @@
+version: '3'
+services:
+  php:
+    container_name: php-request-proxy
+    build:
+      context: .
+    ports:
+      - "8888:80"
+    volumes:
+      - ./src:/var/www/html

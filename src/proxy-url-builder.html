@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Transformer</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+</head>
+<body class="bg-gray-100">
+<div id="app" class="container mx-auto mt-10">
+    <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="inputUrl">Input URL:</label>
+        <input v-model="inputUrl" type="text" id="inputUrl"
+               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+    </div>
+
+    <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="transformedUrl">Transformed URL:</label>
+        <input v-model="transformedUrl" type="text" id="transformedUrl" readonly
+               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+    </div>
+
+    <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="cookies">Cookies:</label>
+        <div v-for="(cookie, index) in cookies" :key="index" class="mb-2 flex items-center">
+            <input v-model="cookie.key" ref="cookieName" type="text" placeholder="Cookie name"
+                   class="shadow appearance-none border rounded w-1/3 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mr-2">
+            <input v-model="cookie.value" type="text" placeholder="Cookie value"
+                   class="shadow appearance-none border rounded w-1/3 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mr-2">
+            <button @click="removeCookie(index)" type="button"
+                    class="ml-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Remove
+            </button>
+        </div>
+        <button @click="addCookieAndFocus" type="button"
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Add Cookie
+        </button>
+    </div>
+
+
+</div>
+
+<script>
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                inputUrl: 'https://wh.6a.lv/ping/be9547?format=json&original=hello1337',
+                cookies: []
+            }
+        },
+        computed: {
+            transformedUrl() {
+                let url;
+                try {
+                    url = new URL(this.inputUrl);
+                } catch (_) {
+                    return '';
+                }
+
+                const transformedParams = new URLSearchParams();
+                url.searchParams.forEach((value, key) => {
+                    transformedParams.set(`q[${key}]`, value);
+                });
+
+                url.search = transformedParams.toString();
+
+                if (this.cookies.length > 0) {
+                    this.cookies.forEach(cookie => {
+                        url.searchParams.set(`request[header][Cookie][${cookie.key}]`, cookie.value);
+                    });
+                }
+
+                return decodeURIComponent(url.toString());
+            }
+        },
+        methods: {
+            addCookie() {
+                this.cookies.push({key: '', value: ''});
+            },
+            removeCookie(index) {
+                this.cookies.splice(index, 1);
+            },
+            addCookieAndFocus() {
+                this.addCookie();
+                this.$nextTick(() => {
+                    const lastCookieNameInput = this.$refs.cookieName[this.cookies.length - 1];
+                    if (lastCookieNameInput) {
+                        lastCookieNameInput.focus();
+                    }
+                });
+            },
+        }
+    });
+</script>
+
+</body>
+</html>

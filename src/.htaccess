@@ -1,0 +1,9 @@
+RewriteEngine On
+
+# Redirect the root URL to proxy-url-builder.html
+RewriteCond %{REQUEST_URI} ^/$
+RewriteRule ^$ /proxy-url-builder.html [R=301,L]
+
+# Rewrite requests to proxy.php
+RewriteCond %{REQUEST_URI} !^/(proxy\.php|proxy-url-builder\.html)
+RewriteRule ^(.*)$ /proxy.php?url=$1 [QSA,L]
