@@ -58,10 +58,10 @@ unset($queryArray['__rs_ao']);
 $responseGrep = $queryArray['__rs_g'] ?? null;
 unset($queryArray['__rs_g']);
 
-// [custom_param] response grep
+// [custom_param] response type: orig, json, json_dump
 
-$responseFormat = $queryArray['__rs_f'] ?? 'json';
-unset($queryArray['__rs_f']);
+$responseType = $queryArray['__rs_t'] ?? 'orig';
+unset($queryArray['__rs_t']);
 
 # --------------- Processing -------------------
 
@@ -121,13 +121,24 @@ function make_request($url, $queryParams, $headers = []): ?array
 
     $contentEncoding = trim($curlResponseHeaders['content-encoding'] ?? 'none');
 
+    // ---- add custom headers
+
     foreach ($responseHeadersMod as $key => $value) {
         $keyLower = trim(strtolower($key));
-        if (!isset($curlResponseHeaders[$keyLower])) {
-            $curlResponseHeaders[$keyLower] = trim($value);
-            header($keyLower . ': ' . trim($value));
+        $trimmedValue = trim($value);
+
+        if (isset($curlResponseHeaders[$keyLower])) {
+            if (is_array($curlResponseHeaders[$keyLower])) {
+                $curlResponseHeaders[$keyLower][] = $trimmedValue;
+                header($keyLower . ': ' . $trimmedValue);
+            }
+            // If the key is not an array, it means the value already exists and you don't need to do anything.
+        } else {
+            $curlResponseHeaders[$keyLower] = $trimmedValue;
+            header($keyLower . ': ' . $trimmedValue);
         }
     }
+
 
     if ($contentEncoding === 'gzip') {
         $response = gzdecode($response);
@@ -145,6 +156,7 @@ function headerFunction($headerLine, &$curlResponseHeaders): int
     global $rsAllowHeadersMod;
     global $rsAllowMethodsMod;
     global $rsAllowOriginMod;
+    global $responseType;
 
     // Split the header line into key and value
     $parts = explode(':', $headerLine, 2);
@@ -165,11 +177,21 @@ function headerFunction($headerLine, &$curlResponseHeaders): int
             $value = mergeHeaderValueList($value, $rsAllowOriginMod);
         }
 
-        $curlResponseHeaders[$key] = $value;
+        // process headers (if key is found multiple times - it should be array of values)
+
+        if (isset($curlResponseHeaders[$key])) {
+            if (is_array($curlResponseHeaders[$key])) {
+                $curlResponseHeaders[$key][] = $value;
+            } else {
+                $curlResponseHeaders[$key] = array($curlResponseHeaders[$key], $value);
+            }
+        } else {
+            $curlResponseHeaders[$key] = $value;
+        }
 
         // Output the updated header (preserve the original casing of the key)
         // extra: forbid changing content-encoding and content-type headers
-        if ($key !== 'content-encoding' && $key !== 'content-type') {
+        if ($key !== 'content-encoding' && ($responseType === 'orig' || $key !== 'content-type')) {
             header($parts[0] . ': ' . $value);
         }
     }
@@ -276,13 +298,15 @@ if ($responseGrep !== null) {
 
 # --------------- Output -------------------
 
-if ($responseFormat === 'json') {
+if ($responseType === 'json') {
     header('Content-Type: application/json');
     echo json_encode($result);
-} else {
+} else if ($responseType === 'json_dump') {
     header('Content-Type: text/html');
     $result['content'] = htmlentities($result['content']);
     echo "<pre>";
     echo print_r($result, true);
     echo "</pre>";
+} else {
+    echo $rsBody;
 }
