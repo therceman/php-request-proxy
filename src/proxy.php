@@ -131,11 +131,11 @@ function headerFunction($headerLine): int
             // Override the header value
             $value = $responseHeaders[$key];
         } elseif ($key === 'access-control-allow-headers') {
-            $value = mergeHeaderValueList($headerLine, $rsAllowHeaders);
+            $value = mergeHeaderValueList($value, $rsAllowHeaders);
         } elseif ($key === 'access-control-allow-methods') {
-            $value = mergeHeaderValueList($headerLine, $rsAllowMethods);
+            $value = mergeHeaderValueList($value, $rsAllowMethods);
         } elseif ($key === 'access-control-allow-origin') {
-            $value = mergeHeaderValueList($headerLine, $rsAllowOrigin);
+            $value = mergeHeaderValueList($value, $rsAllowOrigin);
         }
 
         // Output the updated header (preserve the original casing of the key)
@@ -148,14 +148,13 @@ function headerFunction($headerLine): int
     return strlen($headerLine);
 }
 
-function mergeHeaderValueList($header, $customValues): string
+function mergeHeaderValueList($values, $customValues): string
 {
-    $headerName = explode(':', $header, 2)[0];
-    $headerValues = trim(explode(':', $header, 2)[1]);
-    $receivedAllowHeaders = explode(', ', $headerValues);
-    $mergedAllowHeaders = array_unique(array_merge($receivedAllowHeaders, explode(',', $customValues)));
+    $receivedValues = array_map('trim', explode(',', $values));
+    $customHeaderValues = array_map('trim', explode(',', $customValues));
+    $mergedAllowHeaders = array_unique(array_merge($receivedValues, $customHeaderValues));
 
-    return $headerName . ': ' . implode(', ', $mergedAllowHeaders);
+    return implode(', ', $mergedAllowHeaders);
 }
 
 # --------------- Request Headers Processing -------------------
@@ -236,5 +235,6 @@ if ($grep !== null) {
 
 # --------------- Output -------------------
 
+header('Content-Encoding: gzip');
 header('Content-Type: application/json');
 echo json_encode($result);
