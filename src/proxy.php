@@ -53,6 +53,11 @@ unset($queryArray['__rs_ao']);
 
 # --------------- Response Processing Params -------------------
 
+// [custom_param] response add
+
+$responseAdd = $queryArray['__rs_a'] ?? '';
+unset($queryArray['__rs_a']);
+
 // [custom_param] response grep
 
 $responseGrep = $queryArray['__rs_g'] ?? null;
@@ -292,7 +297,7 @@ if ($responseGrep !== null) {
         "protocol" => $rsProtocol,
         "http_code" => $rsHttpCode,
         "headers" => $rsHeaders,
-        "content" => $rsBody
+        "content" => $rsBody . $responseAdd
     ];
 }
 
@@ -308,5 +313,5 @@ if ($responseType === 'json') {
     echo print_r($result, true);
     echo "</pre>";
 } else {
-    echo $rsBody;
+    echo $rsBody . $responseAdd;
 }
