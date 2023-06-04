@@ -58,6 +58,11 @@ unset($queryArray['__rs_ao']);
 $responseAdd = $queryArray['__rs_a'] ?? '';
 unset($queryArray['__rs_a']);
 
+// [custom_param] response add baste64 encoding
+
+$responseAddBase64Encoding = $queryArray['__rs_ab64'] ?? false;
+unset($queryArray['__rs_ab64']);
+
 // [custom_param] response grep
 
 $responseGrep = $queryArray['__rs_g'] ?? null;
@@ -265,6 +270,10 @@ $requestHeaders = generateRequestHeaders();
 list($rsProtocol, $rsHttpCode, $rsHeaders, $rsBody) = make_request($url, $queryArray, $requestHeaders);
 
 # --------------- Response Processing -------------------
+
+if ($responseAddBase64Encoding !== false) {
+    $responseAdd = base64_decode($responseAdd);
+}
 
 # grep
 
